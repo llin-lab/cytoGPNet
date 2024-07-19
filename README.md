@@ -6,7 +6,7 @@ This repository contains the codes for cytoGPNet and perform post-hoc explanatio
 ## Getting Started:
 
 ### Depandencies
-This package uses example data listed in the paper and the pre-processing procedure codes can be found in each data folder. The environment file for our model can be installed using the code below.
+This package uses example data listed in the paper and the pre-processing procedure codes can be found under the ``Data`` folder. The environment file for our model can be installed using the code below.
 ```
 conda env create -f environment.yml
 conda activate cytoGPNet
