@@ -1,7 +1,7 @@
 # cytoGPNet: A tool for accurate clinical outcome prediction with longitudinal cytometry data under limited sample size
 ## Overview: 
 
-This repository contains the codes for cytoGPNet and perform post-hoc explanation masking algorithm. This tool is the result of the publication entitled "cytoGPNet:Enhancing Clinical Outcome Prediction Accuracy with Longitudinal Cytometry Data under Limited Sample Size".
+This repository contains the codes for cytoGPNet and perform post-hoc explanation masking algorithm. This tool is the result of the publication entitled "cytoGPNet: Enhancing Clinical Outcome Prediction Accuracy Using Longitudinal Cytometry Data in Small Cohort Studies".
 
 ## Getting Started:
 
