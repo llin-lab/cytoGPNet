@@ -20,9 +20,10 @@ Below is a more comprehensive walk‐through to help new users set up and run **
 ### 1. Environment Setup
 1. **Clone** (or download) this repository.
 2. Install the conda environment:
-   ```bash
+```
    conda env create -f environment.yml
    conda activate cytoGPNet
+```
 
 ## 2. Data Acquisition & Preprocessing
 
@@ -40,3 +41,53 @@ Below is a more comprehensive walk‐through to help new users set up and run **
 
    so that they point to the correct preprocessed data.
 
+## Instructions
+
+Below is a step‐by‐step walk‐through on how to train, test, and apply the explanation module in **cytoGPNet**.
+
+---
+
+### 1. Pretrain the Autoencoder
+**cytoGPNet** first pre‐trains an autoencoder at the single‐cell level. This helps learn a compressed representation of the data before involving the Gaussian process.
+
+From your command line:
+```
+python cytoGPNet\ model/pretrain.py \
+    --save-dir <path/to/save/dir>
+```
+- --save-dir: directory to store the autoencoder checkpoint (e.g., pretrained_ae.pt) and any log files.
+You can monitor the reconstruction loss in the console during training.
+
+### 2. Train the cytoGPNet Model
+After pretraining, you can fine‐tune the model end‐to‐end using the Gaussian process plus attention layers.
+```
+python cytoGPNet\ model/train_simplified.py \
+    --save-dir <path/to/save/dir> \
+    --pretrained-file <path/to/pretrained/>
+```
+- --save-dir: a directory to save the trained cytoGPNet model (e.g., model_final.pt) and logs.
+- --pretrained-file: the path to your saved AE checkpoint from the pretraining step (e.g., pretrained_ae.pt).
+
+Tips:
+Keep an eye on the printed training logs (loss, accuracy, etc.) to see if your model converges.
+Make sure the dataset file name in ```train_simplified.py``` matches your actual data file path.
+
+### Testing
+Use ```test.py``` to evaluate performance on a held‐out test set. The script will generate predictions and save a file named ```test_result.csv```:
+```
+python cytoGPNet\ model/test.py \
+    --save-dir <path/to/save/dir> \
+    --trained-model <path/to/trained/model/>
+```
+- --trained-model: path to the final trained model (e.g., model_final.pt).
+- --save-dir: specifies where the test_result.csv file is saved.
+- Inspect test_result.csv for prediction probabilities, labels, or other metrics.
+
+### Explanation
+The explanation script helps identify the most influential markers contributing to the model’s predictions. It produces “mask” scores (ranging from 0 to 1) for each marker, where higher scores indicate greater importance.
+```
+python cytoGPNet\ model/explanation.py \
+    --model <path/to/trained/model/>
+```
+- --model: path to the trained cytoGPNet model.
+- The script will output mask scores, which you can interpret or visualize to understand feature importance.
