@@ -72,7 +72,7 @@ Tips:
 Keep an eye on the printed training logs (loss, accuracy, etc.) to see if your model converges.
 Make sure the dataset file name in ```train_simplified.py``` matches your actual data file path.
 
-### Testing
+### 3. Testing
 Use ```test.py``` to evaluate performance on a held‐out test set. The script will generate predictions and save a file named ```test_result.csv```:
 ```
 python cytoGPNet\ model/test.py \
@@ -83,7 +83,7 @@ python cytoGPNet\ model/test.py \
 - --save-dir: specifies where the test_result.csv file is saved.
 - Inspect test_result.csv for prediction probabilities, labels, or other metrics.
 
-### Explanation
+### 4. Explanation
 The explanation script helps identify the most influential markers contributing to the model’s predictions. It produces “mask” scores (ranging from 0 to 1) for each marker, where higher scores indicate greater importance.
 ```
 python cytoGPNet\ model/explanation.py \
