@@ -24,5 +24,19 @@ Below is a more comprehensive walk‐through to help new users set up and run **
    conda env create -f environment.yml
    conda activate cytoGPNet
 
-### 2. Data Acquisition & Preprocessing
-1. Locate or download the dataset(s) you plan to use. Example data and preprocessing scripts are in the Data folder.
+## 2. Data Acquisition & Preprocessing
+
+1. **Locate or download** the dataset(s) you plan to use. Example data and preprocessing scripts are found in the [`Data`](./Data) folder.
+
+2. **Perform data preprocessing** (if needed) using scripts such as:
+   - [`HEUvsUE_arcsinh_transform.R`](./Data/HEUvsUE_arcsinh_transform.R)
+   - [`HEUvsUE_preprocess.R`](./Data/HEUvsUE_preprocess.R)
+
+   These scripts demonstrate how to apply arcsinh transforms or any other transformations required by your dataset.
+
+3. Make sure you **update the path and file names** in:
+   - [`cytoGPNet model/pretrain.py`](./cytoGPNet%20model/pretrain.py)
+   - [`cytoGPNet model/train_simplified.py`](./cytoGPNet%20model/train_simplified.py)
+
+   so that they point to the correct preprocessed data.
+
