@@ -23,3 +23,6 @@ Below is a more comprehensive walk‐through to help new users set up and run **
    ```bash
    conda env create -f environment.yml
    conda activate cytoGPNet
+
+### 2. Data Acquisition & Preprocessing
+1. Locate or download the dataset(s) you plan to use. Example data and preprocessing scripts are in the Data folder.
