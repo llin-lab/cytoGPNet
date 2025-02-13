@@ -29,8 +29,8 @@ Below is a more comprehensive walk‐through to help new users set up and run **
 1. **Locate or download** the dataset(s) you plan to use. Example data and preprocessing scripts are found in the [`Data`](./Data) folder.
 
 2. **Perform data preprocessing** (if needed) using scripts such as:
-   - [`HEUvsUE_arcsinh_transform.R`](./Data/HEUvsUE_arcsinh_transform.R)
-   - [`HEUvsUE_preprocess.R`](./Data/HEUvsUE_preprocess.R)
+   - [`HEUvsUE_arcsinh_transform.R`](./Data/HEUvsUE/HEUvsUE_arcsinh_transform.R)
+   - [`HEUvsUE_preprocess.R`](./Data/HEUvsUE/HEUvsUE_preprocess.R)
 
    These scripts demonstrate how to apply arcsinh transforms or any other transformations required by your dataset.
 
