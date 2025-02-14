@@ -52,7 +52,7 @@ Below is a step‐by‐step walk‐through on how to train, test, and apply the 
 
 From your command line:
 ```
-python cytoGPNet\ model/pretrain.py \
+python cytoGPNet model/pretrain.py \
     --save-dir <path/to/save/dir>
 ```
 - --save-dir: directory to store the autoencoder checkpoint (e.g., pretrained_ae.pt) and any log files.
@@ -61,7 +61,7 @@ You can monitor the reconstruction loss in the console during training.
 ### 2. Train the cytoGPNet Model
 After pretraining, you can fine‐tune the model end‐to‐end using the Gaussian process plus attention layers.
 ```
-python cytoGPNet\ model/train_simplified.py \
+python cytoGPNet model/train_simplified.py \
     --save-dir <path/to/save/dir> \
     --pretrained-file <path/to/pretrained/>
 ```
@@ -75,7 +75,7 @@ Make sure the dataset file name in ```train_simplified.py``` matches your actual
 ### 3. Testing
 Use ```test.py``` to evaluate performance on a held‐out test set. The script will generate predictions and save a file named ```test_result.csv```:
 ```
-python cytoGPNet\ model/test.py \
+python cytoGPNet model/test.py \
     --save-dir <path/to/save/dir> \
     --trained-model <path/to/trained/model/>
 ```
@@ -86,7 +86,7 @@ python cytoGPNet\ model/test.py \
 ### 4. Explanation
 The explanation script helps identify the most influential markers contributing to the model’s predictions. It produces “mask” scores (ranging from 0 to 1) for each marker, where higher scores indicate greater importance.
 ```
-python cytoGPNet\ model/explanation.py \
+python cytoGPNet model/explanation.py \
     --model <path/to/trained/model/>
 ```
 - --model: path to the trained cytoGPNet model.
