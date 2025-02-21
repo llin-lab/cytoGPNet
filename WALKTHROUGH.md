@@ -11,7 +11,7 @@ In short, **cytoGPNet** is designed to:
 3. Leverage a pre‐trained autoencoder plus Gaussian process (GP) model for robust predictions with limited subjects,
 4. Offer interpretable results through a post-hoc masking algorithm that identifies important cell markers.
 
-Below is a more comprehensive walk‐through to help new users set up and run **cytoGPNet**.
+Below is a more comprehensive walk‐through to set up and run **cytoGPNet**.
 
 ---
 
