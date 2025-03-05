@@ -27,7 +27,7 @@ Below is a more comprehensive walk‐through to set up and run **cytoGPNet**.
 
 ## 2. Data Acquisition & Preprocessing
 
-1. **Locate or download** the dataset(s) you plan to use. Example data and preprocessing scripts are found in the [`Data`](./Data) folder.
+1. **Locate or download** the dataset(s) you plan to use. Example data and preprocessing scripts are found in the [`Data`](./Data) folder. All the fcs files are downloaded from **https://drive.google.com/drive/folders/1chfsOYSCsRg7kcydqyrze6B1Sg9-iInL*
 
 2. **Perform data preprocessing** (if needed) using scripts such as:
    - [`HEUvsUE_arcsinh_transform.R`](./Data/HEUvsUE/HEUvsUE_arcsinh_transform.R)
