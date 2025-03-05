@@ -1,0 +1,92 @@
+---
+title: "Preprocess Data"
+author: "Jay Zhang"
+date: "2025-03-05"
+output: html_document
+---
+
+## Download the HEUvsUE Dataset
+
+#### Please download the HEUvsUE dataset from *https://drive.google.com/drive/folders/1chfsOYSCsRg7kcydqyrze6B1Sg9-iInL* and store the folders and fcs files under the repository named **HEUvsUE**
+
+
+```{r}
+library(tidyverse)
+repo <- "~/Desktop/AutoEncoderCyTOF/HEUvsUE/" # Set your own repo where you store the fcs files
+setwd(repo)
+```
+
+## Import metadata for each individuals
+
+```{r}
+metadata_train <- read_csv("./train/train_labels.csv")
+metadata_train %>% mutate(patient_id = unlist(strsplit(fcs_file, split = "[.]"))[1]) -> metadata_train
+for (i in 1:nrow(metadata_train)) {
+  metadata_train$patient_id[i] <- unlist(strsplit(metadata_train$fcs_file[i], split = "[.]"))[1]
+}
+metadata_train$patient_id <- as.numeric(metadata_train$patient_id)
+
+metadata_test <- read_csv("./test/test_labels.csv")
+metadata_test %>% mutate(patient_id = unlist(strsplit(fcs_file, split = "[.]"))[1]) -> metadata_test
+for (i in 1:nrow(metadata_test)) {
+  metadata_test$patient_id[i] <- unlist(strsplit(metadata_test$fcs_file[i], split = "[.]"))[1]
+}
+metadata_test$patient_id <- as.numeric(metadata_test$patient_id)
+
+metadata_whole <- rbind(metadata_train, metadata_test)
+metadata_whole$group <- c(rep(1:5, floor(nrow(metadata_whole) / 5)), 1:(nrow(metadata_whole) %% 5))
+
+patient_ID <- metadata_whole$patient_id
+```
+
+## Import fcs file using FlowCore
+
+```{r}
+library(flowCore)
+set.seed(1)
+
+for (i in 1:nrow(metadata_train)) {
+  file_name <- unlist(metadata[i,1])
+  fcs_raw <- read.flowSet(file_name, path = paste0(repo, "train/"), transformation = FALSE, package="flowCore")
+  fcs_data <- exprs(fcs_raw[[1]])
+  fcs_df <- as.data.frame(fcs_data)[,3:10]
+  if (nrow(fcs_df) > 1E5) fcs_df <- fcs_df[sample(1:nrow(fcs_df), 1E5),]
+  
+  if (file_name == metadata$fcs_file[1]) marker_label <- colnames(fcs_df)[1:8]
+  else if (sum(marker_label != colnames(fcs_df)[1:8]) > 0) stop("the markers do not match across fcs files")
+  fcs_value <- fcs_df[,1:8]
+  fcs_value$patient <- rep(metadata$patient_id[metadata$fcs_file == file_name], nrow(fcs_value))
+  fcs_value$outcome <- metadata$label[metadata$fcs_file == file_name]
+  
+  if (file_name == metadata$fcs_file[1]) whole_df <- fcs_value
+  else whole_df <- rbind(whole_df, fcs_value)
+  print(i)
+}
+
+
+for (i in 1:nrow(metadata_test)) {
+  file_name <- unlist(metadata1[i,1])
+  fcs_raw <- read.flowSet(file_name, path = paste0(repo, "test/"), transformation = FALSE, package="flowCore")
+  fcs_data <- exprs(fcs_raw[[1]])
+  fcs_df <- as.data.frame(fcs_data)[,3:10]
+  
+  if (file_name == metadata1$fcs_file[1]) marker_label <- colnames(fcs_df)[1:8]
+  else if (sum(marker_label != colnames(fcs_df)[1:8]) > 0) stop("the markers do not match across fcs files")
+  fcs_value <- fcs_df[,1:8]
+  fcs_value$patient <- rep(metadata1$patient_id[metadata1$fcs_file == file_name], nrow(fcs_value))
+  fcs_value$outcome <- metadata1$label[metadata1$fcs_file == file_name]
+  
+  whole_df <- rbind(whole_df, fcs_value)
+  print(i)
+}
+
+```
+
+
+## Save the dataset
+
+```{r}
+saveRDS(whole_df, "./HEUvsUE_8_dims.rds")
+write_csv(whole_df, "./HEUvsUE_8_dims.csv")
+```
+
