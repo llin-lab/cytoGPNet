@@ -13,11 +13,12 @@ from torch.autograd import Variable
 
 from loaddata import CyTOF_Dataset
 
-from gp_utils import simple_AE
+from loadmodel import simple_AE
 
 import os
 import argparse
 import numpy as np
+
 
 torch.manual_seed(1)
 
@@ -38,7 +39,7 @@ def setup_args():
     options.add_argument('-bs', '--batch-size', action="store", dest="batch_size", default=1, type=int)
     options.add_argument('-w', '--num-workers', action="store", dest="num_workers", default=10, type=int)
     options.add_argument('-lrAE', '--learning-rate-AE', action="store", dest="learning_rate_AE", default=1e-6, type=float)
-    options.add_argument('-lrD', '--learning-rate-D', action="store", dest="learning_rate_D", default=1e-6, type=float)
+    options.add_argument('-lrD', '--learning-rate-D', action="store", dest="learning_rate_D", default=1e-4, type=float)
     options.add_argument('-e', '--max-epochs', action="store", dest="max_epochs", default=100, type=int)
     options.add_argument('-wd', '--weight-decay', action="store", dest="weight_decay", default=0, type=float)
 

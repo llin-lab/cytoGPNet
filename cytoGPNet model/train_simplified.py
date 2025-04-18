@@ -17,6 +17,8 @@ from loadmodel import simple_AE, GaussianProcessLayer, Attention_Layer, Simple_C
 import os
 import argparse
 import numpy as np
+from tqdm import tqdm
+
 
 torch.manual_seed(1)
 
@@ -26,6 +28,8 @@ def setup_args():
 
     # data directory
     options.add_argument('-datadir', '--data-dir', action="store", dest="data_dir", default='./HEUvsUE')
+    options.add_argument('-fold', action="store", dest="fold", default = 1, type=int)
+
 
     # save and directory options
     options.add_argument('-sd', '--save-dir', action="store", dest="save_dir", default='./cytoGPNet_output')
@@ -36,7 +40,7 @@ def setup_args():
     options.add_argument('-bs', '--batch-size', action="store", dest="batch_size", default=1, type=int)
     options.add_argument('-w', '--num-workers', action="store", dest="num_workers", default=10, type=int)
     options.add_argument('-lrAE', '--learning-rate-AE', action="store", dest="learning_rate_AE", default=1e-6, type=float)
-    options.add_argument('-lrD', '--learning-rate-D', action="store", dest="learning_rate_D", default=1e-6, type=float)
+    options.add_argument('-lrD', '--learning-rate-D', action="store", dest="learning_rate_D", default=1e-4, type=float)
     options.add_argument('-e', '--max-epochs', action="store", dest="max_epochs", default=100, type=int)
     options.add_argument('-wd', '--weight-decay', action="store", dest="weight_decay", default=0, type=float)
 
@@ -65,7 +69,8 @@ os.makedirs(args.save_dir, exist_ok=True)
 #============= TRAINING INITIALIZATION ==============
 
 # ----- Load and preprocess data -----
-dataset = CyTOF_Dataset(datadir=args.data_dir, name="train_Data.obj", mode='train')
+fold_path = os.path.join(args.data_dir, f"fold{args.fold}")
+dataset = CyTOF_Dataset(datadir= fold_path, name="train_Data.obj", mode='train')
 cyto_tensor = torch.from_numpy(dataset.data[1]).float()  # (n_samples, n_channels, n_cells, n_markers)
 
 N, C, T, M = cyto_tensor.shape

@@ -12,8 +12,7 @@ from torch import nn, optim
 from torch.autograd import Variable
 
 from loaddata import CyTOF_Dataset
-from AE import Autoencoder, Attention_Layer, avg_pool
-from gp_utils import DGPXRLModel, CutstomizedGaussianLikelihood
+from loadmodel import simple_AE, GaussianProcessLayer, Attention_Layer, Simple_Classifier
 
 import os
 import argparse
