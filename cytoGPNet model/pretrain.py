@@ -38,9 +38,9 @@ def setup_args():
     # training parameters
     options.add_argument('-bs', '--batch-size', action="store", dest="batch_size", default=128, type=int)
     options.add_argument('-w', '--num-workers', action="store", dest="num_workers", default=10, type=int)
-    options.add_argument('-lrAE', '--learning-rate-AE', action="store", dest="learning_rate_AE", default=1e-6, type=float)
+    options.add_argument('-lrAE', '--learning-rate-AE', action="store", dest="learning_rate_AE", default=1e-4, type=float)
     options.add_argument('-lrD', '--learning-rate-D', action="store", dest="learning_rate_D", default=1e-4, type=float)
-    options.add_argument('-e', '--max-epochs', action="store", dest="max_epochs", default=1000, type=int)
+    options.add_argument('-e', '--max-epochs', action="store", dest="max_epochs", default=100, type=int)
     options.add_argument('-wd', '--weight-decay', action="store", dest="weight_decay", default=0, type=float)
 
 
@@ -81,7 +81,7 @@ cyto_flat = cyto_concat.reshape(-1, n_markers)
 data_loader = DataLoader(cyto_flat, batch_size=args.batch_size, shuffle=True)
 
 # --------- Initialize model, loss, optimizer ---------
-ae_model = simple_AE(input_dim=n_markers, embed_dim=args.latent_dims, hidden_dim=args.hidden_dims)
+ae_model = simple_AE(input_dim=n_markers, embed_dim=args.latent_dims)
 criterion = nn.MSELoss()
 optimizer = optim.Adam(ae_model.parameters(), lr=args.learning_rate_AE)
 

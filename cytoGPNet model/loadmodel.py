@@ -27,19 +27,13 @@ from gpytorch.lazy import DiagLazyTensor, MatmulLazyTensor, RootLazyTensor, SumL
 # --------- Define simple AE model ---------
 # Build the AE model.
 class simple_AE(nn.Module):
-    def __init__(self, input_dim, embed_dim=2, hidden_dim=4):
+    def __init__(self, input_dim, embed_dim=2):
         super(simple_AE, self).__init__()
         self.encoder = nn.Sequential(
-            nn.Linear(input_dim, hidden_dim),
-            nn.ReLU(inplace=True),
-            nn.BatchNorm1d(hidden_dim),
-            nn.Linear(hidden_dim, embed_dim)
+            nn.Linear(input_dim, embed_dim),
         )
         self.decoder = nn.Sequential(
-            nn.Linear(embed_dim, hidden_dim),
-            nn.ReLU(inplace=True),
-            nn.BatchNorm1d(hidden_dim),
-            nn.Linear(hidden_dim, input_dim)
+            nn.Linear(embed_dim, input_dim),
         )
 
     def forward(self, x):

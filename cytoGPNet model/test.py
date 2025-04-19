@@ -56,17 +56,17 @@ def setup_args():
     # training parameters
     options.add_argument('-bs', '--batch-size', action="store", dest="batch_size", default=1, type=int)
     options.add_argument('-w', '--num-workers', action="store", dest="num_workers", default=10, type=int)
-    options.add_argument('-lrAE', '--learning-rate-AE', action="store", dest="learning_rate_AE", default=1e-6, type=float)
-    options.add_argument('-lrD', '--learning-rate-D', action="store", dest="learning_rate_D", default=1e-3, type=float)
+    options.add_argument('-lrAE', '--learning-rate-AE', action="store", dest="learning_rate_AE", default=1e-4, type=float)
+    options.add_argument('-lrD', '--learning-rate-D', action="store", dest="learning_rate_D", default=1e-2, type=float)
     options.add_argument('-e', '--max-epochs', action="store", dest="max_epochs", default=100, type=int)
     options.add_argument('-wd', '--weight-decay', action="store", dest="weight_decay", default=0, type=float)
 
 
     # hyperparameters
     # options.add_argument('--alpha', action="store", default=1., type=float) # weight for classfication loss compared to discriminative loss
-    options.add_argument('--hidden-dims', action="store", dest="hidden_dims", default=4, type=int)
+    # options.add_argument('--hidden-dims', action="store", dest="hidden_dims", default=4, type=int)
     options.add_argument('--latent-dims', action="store", dest="latent_dims", default=2, type=int) # size of dimension for latent space of autoencoder
-    options.add_argument('--num-inducing-points', action="store", dest="num_inducing_points", default=500, type=int)
+    options.add_argument('--num-inducing-points', action="store", dest="num_inducing_points", default=100, type=int)
 
 
     # gpu options
@@ -98,7 +98,7 @@ cyto_concat = cyto_tensor.permute(0, 2, 1, 3).reshape(N, C * T, M)  # (n_samples
 test_loader = DataLoader(TensorDataset(cyto_concat, labels), batch_size=args.batch_size, shuffle=False)
 
 # ========== Load Trained Model Components ==========
-autoencoder = simple_AE(input_dim=M, embed_dim=args.latent_dims, hidden_dim=args.hidden_dims).to(device)
+autoencoder = simple_AE(input_dim=M, embed_dim=args.latent_dims).to(device)
 autoencoder.load_state_dict(torch.load(os.path.join(args.save_dir, f"simpleAE_finetune_epoch{args.max_epochs}.pth")))
 autoencoder.eval()
 
