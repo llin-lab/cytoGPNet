@@ -44,7 +44,7 @@ class CyTOF_Dataset(Dataset):
         print(metaData.head(),"\n")
 
         print("Dimensions of cytoData: ",cytoData.shape,"\n")
-        print("Names of the 27 makers: \n",markerNames.values)
+        print("Names of the 27 makers: \n",markerNames)
         #data = labels.merge(data, left_index=True, right_index=True)
 
         

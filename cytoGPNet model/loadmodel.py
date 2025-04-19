@@ -230,69 +230,6 @@ class Simple_Classifier(nn.Module):
             return torch.sigmoid(self.net(x))  # Apply the classifier if nz > 1
 
 
-# Build the full model.
-class DGPXRLModel(gpytorch.Module):
-    def __init__(self, input_dim, hiddens=4, likelihood_type, num_inducing_points, embed_dim=2,
-                 encoder_type='AE', inducing_points=None, mean_inducing_points=None, grid_bounds=None, using_ngd=False,
-                 using_ksi=False, using_ciq=False, using_sor=False, using_OrthogonallyDecouple=False):
-        """
-        Define the full model.
-        :param seq_len: trajectory length.
-        :param input_dim: input state/action dimension.
-        :param hiddens: hidden layer dimentions.
-        :param likelihood_type: likelihood type.
-        :param num_inducing_points: number of inducing points.
-        :param embed_dim: actions embedding dim.
-        :param encoder_type: encoder type ('VAE' or 'AE').
-        :param inducing_points: inducing points at the latent space Z (num_inducing_points, 2*hiddens[-1]).
-        :param mean_inducing_points: mean inducing points, used for orthogonally decoupled VGP.
-        :param grid_bounds: grid bounds.
-        :param using_ngd: Whether to use natural gradient descent.
-        :param using_ksi: Whether to use KSI approximation, using this with other options as False.
-        :param using_ciq: Whether to use Contour Integral Quadrature to approximate K_{zz}^{-1/2}, Use it together with NGD.
-        :param using_sor: Whether to use SoR approximation, not applicable for KSI and CIQ.
-        :param using_OrthogonallyDecouple
-        """
-        super().__init__()
-        self.seq_len = seq_len
-        self.encoder_type = encoder_type
-
-        if self.encoder_type == 'VAE':
-            self.encoder = simple_VAE(input_dim, hidden_dim=hiddens, embed_dim=embed_dim)
-        else:
-            self.encoder = simple_AE(input_dim, hidden_dim=hiddens, embed_dim=embed_dim)
-
-        if inducing_points is None:
-            # inducing_points = torch.randn(num_inducing_points, 2*hiddens[-1]) # Pong game.
-            inducing_points = torch.rand(num_inducing_points, 2 * hiddens[-1]) # MuJoCo/gym game.
-        if mean_inducing_points is None:
-            # mean_inducing_points = torch.randn(num_inducing_points*5, 2*hiddens[-1])
-            mean_inducing_points = torch.rand(num_inducing_points*5, 2 * hiddens[-1]) # MuJoCo/gym game.
-        # self.batch_norm = nn.BatchNorm1d(hiddens[-1] * 2)
-        self.gp_layer = GaussianProcessLayer(input_dim=input_dim,
-                                             num_inducing_points=num_inducing_points, inducing_points=inducing_points,
-                                             mean_inducing_points=mean_inducing_points, grid_bounds=grid_bounds,
-                                             likelihood_type=likelihood_type, using_ngd=using_ngd, using_ksi=using_ksi,
-                                             using_ciq=using_ciq, using_sor=using_sor,
-                                             using_OrthogonallyDecouple=using_OrthogonallyDecouple)
-
-    def forward(self, x, k):
-        """
-        Compute the marginal posterior q(f) ~ N(\mu_f, \sigma_f), \mu_f (N*T, 1), \sigma_f(N*T, N*T).
-        Later, when computing the marginal loglikelihood, we sample multiple set of data from the marginal loglikelihood.
-        :param x: input data x with PAD for each cluster (N, num_markers).
-        : param k: number of marker clusters
-        :return: q(gy_layer(Encoder(x))).
-        """
-        N, P = x.shape
-        cluster_size = int(P / k)
-        embedding = self.encoder(x[:, 0:cluster_size])  # (N, cluster_size) -> (N, D).
-        for i in range(1, k):
-            add_embedding = self.encoder(x[:, (cluster_size*i):(cluster_size*(i+1))])
-            embedding = torch.cat([embedding, add_embedding], dim=-1) # (N, k*D)
-        res = self.gp_layer(embedding)
-        return res, embedding
-
 
 class ConstantMean(nn.Module):
     """

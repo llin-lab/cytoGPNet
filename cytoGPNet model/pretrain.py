@@ -7,7 +7,7 @@ Created on Tue Aug 30 04:29:48 2024
 """
 
 import torch
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, TensorDataset
 from torch import nn, optim
 from torch.autograd import Variable
 
@@ -36,11 +36,11 @@ def setup_args():
     #options.add_argument('--pretrained-file', action="store")
 
     # training parameters
-    options.add_argument('-bs', '--batch-size', action="store", dest="batch_size", default=1, type=int)
+    options.add_argument('-bs', '--batch-size', action="store", dest="batch_size", default=128, type=int)
     options.add_argument('-w', '--num-workers', action="store", dest="num_workers", default=10, type=int)
     options.add_argument('-lrAE', '--learning-rate-AE', action="store", dest="learning_rate_AE", default=1e-6, type=float)
     options.add_argument('-lrD', '--learning-rate-D', action="store", dest="learning_rate_D", default=1e-4, type=float)
-    options.add_argument('-e', '--max-epochs', action="store", dest="max_epochs", default=100, type=int)
+    options.add_argument('-e', '--max-epochs', action="store", dest="max_epochs", default=1000, type=int)
     options.add_argument('-wd', '--weight-decay', action="store", dest="weight_decay", default=0, type=float)
 
 
@@ -114,5 +114,5 @@ for epoch in range(args.max_epochs):
     print(f"Epoch {epoch:03d} - Recon Loss: {epoch_loss:.6f}")
 
     # Save model every frequency epochs
-    if epoch % args.save_freq == 0:
-        torch.save(ae_model.state_dict(), os.path.join(args.save_dir, f"simpleAE_epoch{epoch}.pth"))
+    if (epoch+1) % args.save_freq == 0:
+        torch.save(ae_model.state_dict(), os.path.join(args.save_dir, f"simpleAE_epoch{epoch+1}.pth"))
