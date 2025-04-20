@@ -24,6 +24,7 @@ def setup_args():
     options.add_argument('--metadata-file', action="store", dest="metadata_file", default='metadata_whole.csv')
     options.add_argument('--num-markers', action="store", dest="num_markers", default=8, type=int)
     options.add_argument('-fold', action="store", dest="fold", default=1, type=int)
+    options.add_argument('--column-id', action="store", dest="column_id", default='patient_id')
     
     return options.parse_args()
 
@@ -31,7 +32,7 @@ def setup_args():
 args = setup_args()
 
 
-def csv_to_obj(csv_file, metadata_file, obj_file, num_markers=19, group_filter=None):
+def csv_to_obj(csv_file, metadata_file, obj_file, num_markers=19, group_filter=None, column_id = args.column_id):
     # Load metadata and filter by group
     cytof_files = pd.read_csv(metadata_file)
     if group_filter is not None:
@@ -40,6 +41,10 @@ def csv_to_obj(csv_file, metadata_file, obj_file, num_markers=19, group_filter=N
 
     # Load single-cell data and filter for selected patients
     df = pd.read_csv(csv_file)
+    # Rename patient_id column if it doesn't exist
+    if column_id != 'patient_id':
+        df['patient_id'] = df[column_id]
+        print(f"Added 'patient_id' column based on {column_id} column.")
     df = df[df['patient_id'].isin(selected_patients)]
     
     marker_cols = df.columns[:num_markers]
