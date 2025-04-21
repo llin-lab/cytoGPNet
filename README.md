@@ -19,12 +19,27 @@ Below is a more comprehensive walk‐through to set up and run **cytoGPNet**.
 
 ### 1. Environment Setup
 1. **Clone** (or download) this repository.
-2. Install the conda environment:
 ```
-   conda env create -f environment.yml
-   conda activate cytoGPNet
+git clone https://github.com/your-username/cytoGPNet.git
+cd cytoGPNet
 ```
+3. Install the conda environment:
+```
+conda env create -f environment.yml
+conda activate cytoGPNet
+```
+Note: The provided environment.yml includes platform-specific dependencies (e.g., GPU-enabled PyTorch). If you encounter compatibility issues, consider manually installing the core packages listed below instead:
+- torch==1.12.1+cu113
+- torchvision==0.13.1+cu113
+- torchaudio==0.12.1+cu113
+- gpytorch==1.13
+- pandas==1.3.5
+- matplotlib==3.5.3
+- seaborn==0.12.0
+- tqdm==4.67.1
+- numpy==1.26.4
 
+For CPU-only environments or other OS setups, please adapt the versions accordingly (e.g., use CPU builds of PyTorch).
 ## 2. Data Acquisition & Preprocessing
 
 1. **Locate or download** the dataset(s) you plan to use. Example data and preprocessing scripts are found in the [`Data`](./Data) folder. All the fcs files are downloaded from **https://drive.google.com/drive/folders/1chfsOYSCsRg7kcydqyrze6B1Sg9-iInL*
