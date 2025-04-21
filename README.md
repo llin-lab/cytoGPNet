@@ -28,7 +28,7 @@ cd cytoGPNet
 conda env create -f environment.yml
 conda activate cytoGPNet
 ```
-Note: The provided environment.yml includes platform-specific dependencies (e.g., GPU-enabled PyTorch). If you encounter compatibility issues, consider manually installing the core packages listed below instead:
+Note: The environment requires Python 3.10. You can ensure compatibility by using a base environment with Python 3.10. The provided environment.yml includes platform-specific dependencies (e.g., GPU-enabled PyTorch). If you encounter compatibility issues, consider manually installing the core packages listed below instead:
 - torch==1.12.1+cu113
 - torchvision==0.13.1+cu113
 - torchaudio==0.12.1+cu113
