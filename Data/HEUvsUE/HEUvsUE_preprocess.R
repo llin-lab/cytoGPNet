@@ -1,7 +1,7 @@
 library(tidyverse)
 library(data.table)  # Add data.table library
 
-repo <- "/Users/hahaha/Desktop/cytogpnet/HEUvsUE" # Set your own repo where you store the fcs files
+repo <- "~/Desktop/AutoEncoderCyTOF/HEUvsUE/" # Set your own repo where you store the fcs files
 setwd(repo)
 
 # Read and process metadata
