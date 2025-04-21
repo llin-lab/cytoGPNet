@@ -38,9 +38,9 @@ def setup_args():
     # training parameters
     options.add_argument('-bs', '--batch-size', action="store", dest="batch_size", default=128, type=int)
     options.add_argument('-w', '--num-workers', action="store", dest="num_workers", default=10, type=int)
-    options.add_argument('-lrAE', '--learning-rate-AE', action="store", dest="learning_rate_AE", default=1e-4, type=float)
+    options.add_argument('-lrAE', '--learning-rate-AE', action="store", dest="learning_rate_AE", default=1e-6, type=float)
     options.add_argument('-lrD', '--learning-rate-D', action="store", dest="learning_rate_D", default=1e-4, type=float)
-    options.add_argument('-e', '--max-epochs', action="store", dest="max_epochs", default=100, type=int)
+    options.add_argument('-e', '--max-epochs', action="store", dest="max_epochs", default=1000, type=int)
     options.add_argument('-wd', '--weight-decay', action="store", dest="weight_decay", default=0, type=float)
 
 
