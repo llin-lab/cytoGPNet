@@ -3,126 +3,154 @@ import numpy as np
 from scipy import io
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
+from torch.distributions import Bernoulli
 from torchvision import transforms, datasets
-from models import MnistModel  # Assuming MnistModel is defined in 'models.py'
-from utils import fix_gpu_memory  # Assuming fix_gpu_memory is defined in 'utils.py'
+from loaddata import CyTOF_Dataset
+from loadmodel import simple_AE, GaussianProcessLayer, Attention_Layer, Simple_Classifier
+
 
 ####################
-# MODEL/DATA HYPERPARAMETERS
-DATA_URL = '../exp/mnist/data/'
-MODEL_URL = '../exp/mnist/model/'
-RESULT_URL = '../exp/mnist/results/exp'
 
-# EXPLANATION HYPERPARAMETERS
-EXP_METHOD = 'BBMP'
-RESULT_URL = os.path.join(RESULT_URL, EXP_METHOD)
-if not os.path.isdir(RESULT_URL):
-    os.mkdir(RESULT_URL)
+def setup_args():
 
-NUM_NOISE = 64
-FUSED_TYPE = 'None'
-LAMBDA_1 = 1e-3
-LAMBDA_2 = 1e-4
-LR = 1e-2
-MASK_SHAPE = (28, 28, 1)
-EXP_BATCH_SIZE = 32
-EXP_EPOCH = 250
-EXP_DISPLAY_INTERVAL = 50
-EXP_LAMBDA_PATIENCE = 20
-EARLY_STOP_PATIENCE = 20
-####################
+    options = argparse.ArgumentParser()
 
-# Set device to CUDA if available
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # data directory
+    options.add_argument('-datadir', '--data-dir', action="store", dest="data_dir", default='./HEUvsUE')
+    options.add_argument('-fold', action="store", dest="fold", default = 1, type=int)
 
-# Load data using torchvision
-transform = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize((0.5,), (0.5,))
-])
+    # save and directory options
+    options.add_argument('-sd', '--save-dir', action="store", dest="save_dir", default='./cytoGPNet_output')
+    options.add_argument('--save-freq', action="store", dest="save_freq", default=10, type=int)
 
-train_dataset = datasets.MNIST(root=DATA_URL, train=True, download=True, transform=transform)
-test_dataset = datasets.MNIST(root=DATA_URL, train=False, download=True, transform=transform)
+    # training parameters
+    options.add_argument('-bs', '--batch-size', action="store", dest="batch_size", default=1, type=int)
+    options.add_argument('-w', '--num-workers', action="store", dest="num_workers", default=10, type=int)
+    options.add_argument('-lrAE', '--learning-rate-AE', action="store", dest="learning_rate_AE", default=1e-4, type=float)
+    options.add_argument('-lrD', '--learning-rate-D', action="store", dest="learning_rate_D", default=1e-2, type=float)
+    options.add_argument('-e', '--max-epochs', action="store", dest="max_epochs", default=100, type=int)
+    options.add_argument('-wd', '--weight-decay', action="store", dest="weight_decay", default=0, type=float)
 
-train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=EXP_BATCH_SIZE, shuffle=True)
-test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=EXP_BATCH_SIZE, shuffle=False)
 
-# Initialize and load model
-input_shape = (1, 28, 28)
-num_classes = 10
-test_model = MnistModel(input_shape=input_shape, num_class=num_classes)
-test_model.load_state_dict(torch.load(MODEL_URL + 'local_model.pth'))  # Assuming model saved as PyTorch state_dict
+    # hyperparameters
+    # options.add_argument('--alpha', action="store", default=1., type=float) # weight for classfication loss compared to discriminative loss
+    # options.add_argument('--hidden-dims', action="store", dest="hidden_dims", default=4, type=int)
+    options.add_argument('--latent-dims', action="store", dest="latent_dims", default=2, type=int) # size of dimension for latent space of autoencoder
+    options.add_argument('--num-inducing-points', action="store", dest="num_inducing_points", default=100, type=int)
 
-test_model.to(device)
-test_model.eval()
 
-# Evaluate original testing accuracy
-correct = 0
-total = 0
+    # gpu options
+    options.add_argument('-gpu', '--use-gpu', action="store_false", dest="use_gpu")
+
+    return options.parse_args()
+
+args = setup_args()
+if not torch.cuda.is_available():
+    args.use_gpu = False
+
+def accuracy(output, target):
+    pred = output.argmax(dim=1).view(-1)
+    correct = pred.eq(target.view(-1)).float().sum().item()
+    return correct
+
+device = torch.device("cuda" if args.use_gpu else "cpu")
+
+# ========== Load Data ==========
+dataset = CyTOF_Dataset(datadir=args.datadir, name=args.filename, mode='test')
+cyto_tensor = torch.from_numpy(dataset.data[1]).float()  # (N, C, T, M)
+labels = torch.tensor(dataset.data[0]["label"].values).float()
+patient_ids = dataset.data[0]["patient_id"].values
+markerNames = dataset.data[2]
+
+N, C, T, M = cyto_tensor.shape
+
+# ========== Load Model Components ==========
+autoencoder = simple_AE(input_dim=M, embed_dim=args.latent_dims).to(device)
+autoencoder.load_state_dict(torch.load(os.path.join(args.save_dir, f"simpleAE_finetune_epoch{args.max_epochs}.pth")))
+autoencoder.eval()
+
+attention = Attention_Layer().to(device)
+attention.load_state_dict(torch.load(os.path.join(args.save_dir, f"Attention_Layer_epoch{args.max_epochs}.pth")))
+attention.eval()
+
+classifier = Simple_Classifier(nz=1).to(device)
+classifier.load_state_dict(torch.load(os.path.join(args.save_dir, f"Simple_Classifier_epoch{args.max_epochs}.pth")))
+classifier.eval()
+
+# Prepare GP
 with torch.no_grad():
-    for images, labels in test_loader:
-        images, labels = images.to(device), labels.to(device)
-        outputs = test_model(images)
-        _, predicted = torch.max(outputs.data, 1)
-        total += labels.size(0)
-        correct += (predicted == labels).sum().item()
+    flat = cyto_tensor.reshape(-1, M)[:args.num_inducing_points, :].to(device)
+    z_induce = autoencoder.encoder(flat)
 
-print('Original testing accuracy: %.2f%%' % (100 * correct / total))
+gp_layer = GaussianProcessLayer(
+    input_dim=args.latent_dims,
+    num_inducing_points=z_induce.size(0),
+    inducing_points=z_induce.clone(),
+    mean_inducing_points=z_induce.clone(),
+    grid_bounds=[
+        (z_induce[:, 0].min().item(), z_induce[:, 0].max().item()),
+        (z_induce[:, 1].min().item(), z_induce[:, 1].max().item())
+    ],
+    likelihood_type='classification',
+    using_ngd=True,
+    using_ksi=False,
+    using_ciq=False,
+    using_sor=False,
+    using_OrthogonallyDecouple=False
+).to(device)
+gp_layer.load_state_dict(torch.load(os.path.join(args.save_dir, f"GaussianProcessLayer_epoch{args.max_epochs}.pth")))
+gp_layer.eval()
 
-# Explanation using BBMP method
-if EXP_METHOD == 'BBMP':
-    print('Conducting explanation using BBMP method.')
-    
-    # Define BBMPExp class (assuming it's defined in 'exp.py')
-    from exp import BBMPExp
-    
-    # Initialize BBMPExp instance
-    exp_test = BBMPExp(input_shape=input_shape[1:], mask_shape=MASK_SHAPE, model=test_model,
-                       num_class=num_classes, optimizer=optim.Adam, lr=LR, regularizer='elasticnet')
-    
-    mask_true_all = []
-    mask_error_all = []
-    
-    for i in range(len(test_dataset)):
-        if (i + 1) % 20 == 0:
-            print('**********************************')
-            print(f'Finish explaining {i+1}/{len(test_dataset)} samples.')
-            print('**********************************')
-        
-        # Get sample and labels
-        x_exp, y_exp_true = test_dataset[i]
-        x_exp = x_exp.unsqueeze(0).repeat(NUM_NOISE, 1, 1, 1).to(device)  # Repeat for noise
-        y_exp_true = y_exp_true.unsqueeze(0).repeat(NUM_NOISE, 1).to(device)
-        y_exp_error = torch.argmax(test_model(x_exp), dim=1).unsqueeze(1)
-        
-        # Fit the explanation
-        mask_true = exp_test.fit(X=x_exp, y=y_exp_true, batch_size=EXP_BATCH_SIZE, epochs=EXP_EPOCH,
-                                 lambda_1=LAMBDA_1, lambda_2=LAMBDA_2, display_interval=EXP_DISPLAY_INTERVAL,
-                                 lambda_patience=EXP_LAMBDA_PATIENCE, early_stop_patience=EARLY_STOP_PATIENCE,
-                                 fused_flag=FUSED_TYPE)
-        
-        mask_true_all.append(mask_true)
-        
-        mask_error = exp_test.fit(X=x_exp, y=y_exp_error, batch_size=EXP_BATCH_SIZE, epochs=EXP_EPOCH,
-                                  lambda_1=LAMBDA_1, lambda_2=LAMBDA_2, display_interval=EXP_DISPLAY_INTERVAL,
-                                  lambda_patience=EXP_LAMBDA_PATIENCE, early_stop_patience=EARLY_STOP_PATIENCE,
-                                  fused_flag=FUSED_TYPE)
-        
-        mask_error_all.append(mask_error)
-    
-    mask_true_all = torch.stack(mask_true_all)
-    mask_error_all = torch.stack(mask_error_all)
+likelihood = gpytorch.likelihoods.BernoulliLikelihood().to(device)
+likelihood.load_state_dict(torch.load(os.path.join(args.save_dir, f"BernoulliLikelihood_epoch{args.max_epochs}.pth")))
+likelihood.eval()
 
-else:
-    print('Explaining with another method.')
+# ========== Define Wrapper ==========
+class CytoGPNetModel(torch.nn.Module):
+    def __init__(self, ae, gp, attn, clf):
+        super().__init__()
+        self.ae = ae
+        self.gp = gp
+        self.attn = attn
+        self.clf = clf
 
-# Save results or further processing as needed
-# io.savemat(RESULT_URL+'exp_masks_'+str(num_round), {'m_true': mask_true_all.numpy(), 'm_error': mask_error_all.numpy()})
-#
-# num_dis = int(np.sqrt(mask_true_all.shape[0]))
-# merged_1 = utils.merge_images(x_error[0:num_dis,], mask_true_all[0:num_dis,],)
-# plt.imsave(RESULT_URL + 'exp_mask_local_true_'+str(num_round), merged_1, cmap='gray')
-#
-# merged_2 = utils.merge_images(x_error[0:num_dis,], mask_error_all[0:num_dis,],)
-# plt.imsave(RESULT_URL + 'exp_mask_local_error_'+str(num_round), merged_2, cmap='gray')
+    def forward(self, x):
+        B, T, M = x.shape
+        z = self.ae.encoder(x.view(-1, M))  # (B*T, latent_dim)
+        f_dist = self.gp(z)
+        f_mean = f_dist.mean.view(B, T)
+        pooled = self.attn(f_mean).unsqueeze(1)  # (B, 1)
+        return self.clf(pooled)  # (B, 1)
+
+full_model = CytoGPNetModel(autoencoder, gp_layer, attention, classifier).to(device)
+full_model.eval()
+
+# ========== Run BBMP ==========
+bbmp = BBMPExp(model=full_model, num_markers=M, device=device)
+mask_records = []
+
+for i in tqdm(range(N), desc="Running BBMP"):
+    x = cyto_tensor[i].permute(2, 0, 1).reshape(1, -1, M).to(device)  # (1, C*T, M)
+    y_true = int(labels[i].item())
+    pid = patient_ids[i]
+
+    with torch.no_grad():
+        y_pred = int(full_model(x).squeeze().item() > 0.5)
+
+    mask_true = bbmp.explain(x, target_label=y_true)
+    mask_error = bbmp.explain(x, target_label=y_pred)
+
+    for m_idx in range(M):
+        mask_records.append({
+            "patient_id": pid,
+            "marker_name": markerNames[m_idx],
+            "mask_true": mask_true[m_idx].item(),
+            "mask_error": mask_error[m_idx].item()
+        })
+
+# ========== Save CSV ==========
+mask_df = pd.DataFrame(mask_records)
+mask_df.to_csv(os.path.join(args.save_dir, f"BBMP_mask_scores_epoch{args.max_epochs}.csv"), index=False)
+print("BBMP masks saved to CSV.")
