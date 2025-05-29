@@ -106,3 +106,11 @@ python cytoGPNet model/explanation.py \
 ```
 - --model: path to the trained cytoGPNet model.
 - The script will output mask scores, which you can interpret or visualize to understand feature importance.
+
+## Advanced Customization
+### 1. Customizing GP Kernel Functions
+By default, **cytoGPNet** uses **additive Scaled RBF kernels** in the GP layer. The current implementation in `loadmodel.py` creates multiple RBF kernels for different dimensions.
+To modify the kernel function, see [Customizing GP Kernel Functions](./cytoGPNet%20model/Advanced_Customization.md#1-customizing-gp-kernel-functions) for reference.
+
+### 2. Adding Covariates to the Final Classifier
+The current implementation uses a `Simple_Classifier` that takes the attention output and applies logistic regression. To add covariates, you need to modify both the model architecture and the training pipeline. Please see [Adding Covariates to the Final Classifier](./cytoGPNet%20model/Advanced_Customization.md#2-adding-covariates-to-the-final-classifier) for reference.
