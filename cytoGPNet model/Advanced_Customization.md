@@ -29,6 +29,7 @@ for i in range(1, int(inducing_points.shape[1] / input_dim)):
 To modify the kernel function:
 1. Edit the `GaussianProcessLayer` class in `loadmodel.py` (around lines 155-170).
 2. Replace the kernel initialization with your desired kernel:
+
 **Single Matérn Kernel:**
 ```python
 self.covar_module = gpytorch.kernels.ScaleKernel(
