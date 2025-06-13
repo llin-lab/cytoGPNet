@@ -51,7 +51,7 @@ for (i in 1:nrow(metadata)) {
   if (file_name == metadata$fcs_file[1]) marker_label <- colnames(fcs_df)[1:8]
   else if (sum(marker_label != colnames(fcs_df)[1:8]) > 0) stop("the markers do not match across fcs files")
   fcs_value <- fcs_df[,1:8]
-  fcs_value$patient <- rep(metadata$patient_id[metadata$fcs_file == file_name], nrow(fcs_value))
+  fcs_value$patient_id <- rep(metadata$patient_id[metadata$fcs_file == file_name], nrow(fcs_value))
   fcs_value$outcome <- metadata$label[metadata$fcs_file == file_name]
   
   if (file_name == metadata$fcs_file[1]) whole_df <- fcs_value
@@ -68,7 +68,7 @@ for (i in 1:nrow(metadata1)) {
   if (file_name == metadata1$fcs_file[1]) marker_label <- colnames(fcs_df)[1:8]
   else if (sum(marker_label != colnames(fcs_df)[1:8]) > 0) stop("the markers do not match across fcs files")
   fcs_value <- fcs_df[,1:8]
-  fcs_value$patient <- rep(metadata1$patient_id[metadata1$fcs_file == file_name], nrow(fcs_value))
+  fcs_value$patient_id <- rep(metadata1$patient_id[metadata1$fcs_file == file_name], nrow(fcs_value))
   fcs_value$outcome <- metadata1$label[metadata1$fcs_file == file_name]
   
   whole_df <- rbind(whole_df, fcs_value)
@@ -79,12 +79,12 @@ saveRDS(whole_df, "./whole_df_8_dims.rds")
 
 # Convert to data.table for more efficient operations
 whole_df_dt <- as.data.table(whole_df)
-setkey(whole_df_dt, patient)  # Index for faster filtering
+setkey(whole_df_dt, patient_id)  # Index for faster filtering
 
 # Get counts per patient (more efficient)
-patient_counts <- whole_df_dt[, .N, by = patient]
+patient_counts <- whole_df_dt[, .N, by = patient_id]
 n_row_counts <- patient_counts$N
-names(n_row_counts) <- patient_counts$patient
+names(n_row_counts) <- patient_counts$patient_id
 
 # Create patient ID to index mapping for faster lookups
 patient_id_to_idx <- setNames(1:length(patient_ID), as.character(patient_ID))
